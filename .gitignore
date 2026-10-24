@@ -1,0 +1,11 @@
+build/
+dist/
+*.app
+.DS_Store
+*.log
+xcuserdata/
+DerivedData/
+*.dmg
+*.pkg
+.idea/
+.vscode/
