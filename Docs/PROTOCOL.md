@@ -1,6 +1,8 @@
-# Protocolo HID++ T650 (TouchPadRawXY 0x6100)
+# Protocolo HID++ — TouchPadRawXY `0x6100` (perfil documentado: T650)
 
-Implementación independiente en Swift basada en la [spec Logitech 0x6100](https://lekensteyn.nl/files/logitech/6100_touchpadraw.pdf) y el comportamiento documentado por la comunidad Linux (WPID `0x4101`). No se incluye código fuente de Solaar/libratbag.
+Implementación independiente en Swift (**Hidex**) basada en la [spec Logitech 0x6100](https://lekensteyn.nl/files/logitech/6100_touchpadraw.pdf) y el comportamiento documentado por la comunidad Linux (WPID `0x4101`). No se incluye código fuente de Solaar/libratbag.
+
+> El nombre del producto es **Hidex**. “T650” / “Logitech” solo identifican hardware compatible.
 
 ## Framing
 

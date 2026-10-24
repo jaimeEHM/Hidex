@@ -2,13 +2,13 @@
 # Stable local code-signing identity so Accessibility TCC survives rebuilds.
 set -euo pipefail
 
-CERT_CN="T650Gestures Local"
+CERT_CN="Hidex Local"
 KEYCHAIN="${HOME}/Library/Keychains/login.keychain-db"
 [[ -f "$KEYCHAIN" ]] || KEYCHAIN="${HOME}/Library/Keychains/login.keychain"
 
 valid_hash() {
   security find-identity -v -p codesigning 2>/dev/null \
-    | awk '/T650Gestures Local/{print $2; exit}'
+    | awk '/Hidex Local/{print $2; exit}'
 }
 
 if HASH="$(valid_hash)"; [[ -n "${HASH:-}" ]]; then
@@ -36,9 +36,9 @@ openssl req -new -x509 -days 3650 -key "$TMP/key.pem" -out "$TMP/cert.pem" -conf
 
 openssl pkcs12 -export -legacy \
   -out "$TMP/cert.p12" -inkey "$TMP/key.pem" -in "$TMP/cert.pem" \
-  -passout pass:t650local -name "$CERT_CN" 2>/dev/null
+  -passout pass:hidexlocal -name "$CERT_CN" 2>/dev/null
 
-security import "$TMP/cert.p12" -k "$KEYCHAIN" -P t650local -A \
+security import "$TMP/cert.p12" -k "$KEYCHAIN" -P hidexlocal -A \
   -T /usr/bin/codesign -T /usr/bin/security >/dev/null 2>&1 || true
 
 security add-trusted-cert -d -r trustRoot -p codeSign -k "$KEYCHAIN" "$TMP/cert.pem" >/dev/null 2>&1 || true

@@ -1,13 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
-APP_NAME="T650Gestures"
+APP_NAME="Hidex"
+IDENTIFIER="com.jimmks7.hidex"
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 BUILD_DIR="$ROOT/build"
 APP_BUNDLE="$BUILD_DIR/$APP_NAME.app"
 MACOS_DIR="$APP_BUNDLE/Contents/MacOS"
+VERSION="$(tr -d '[:space:]' < "$ROOT/VERSION")"
 
-echo "Building $APP_NAME..."
+echo "Building $APP_NAME $VERSION..."
 
 rm -rf "$APP_BUNDLE"
 mkdir -p "$MACOS_DIR"
@@ -22,6 +24,8 @@ SOURCES=(
   "$ROOT/Sources/Gestures/SpaceSwitcher.swift"
   "$ROOT/Sources/Gestures/InputInjector.swift"
   "$ROOT/Sources/Gestures/GestureEngine.swift"
+  "$ROOT/Sources/App/L10n.swift"
+  "$ROOT/Sources/App/StatusItemIcon.swift"
   "$ROOT/Sources/App/PreferencesView.swift"
   "$ROOT/Sources/App/GestureLabView.swift"
   "$ROOT/Sources/App/AppDelegate.swift"
@@ -38,19 +42,19 @@ swiftc -O \
   "${SOURCES[@]}"
 
 cp "$ROOT/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP_BUNDLE/Contents/Info.plist"
 
 SIGN_ID="$("$ROOT/scripts/ensure-signing-identity.sh")"
 echo "Signing with identity hash: $SIGN_ID"
-codesign --force --sign "$SIGN_ID" --identifier com.t650.gestures "$APP_BUNDLE"
+codesign --force --sign "$SIGN_ID" --identifier "$IDENTIFIER" "$APP_BUNDLE"
 
-# Refuse ad-hoc — it breaks Accessibility TCC across rebuilds.
 CS_OUT="$(codesign -dv "$APP_BUNDLE" 2>&1)"
 if echo "$CS_OUT" | grep -q 'Signature=adhoc'; then
   echo "ERROR: app is still ad-hoc signed; Accessibility will not stick." >&2
   echo "$CS_OUT" | head -20 >&2
   exit 1
 fi
-if ! echo "$CS_OUT" | grep -Eq 'Authority=T650Gestures Local|Signature size=[1-9]'; then
+if ! echo "$CS_OUT" | grep -Eq 'Authority=Hidex Local|Signature size=[1-9]'; then
   echo "ERROR: expected stable (non-adhoc) signature" >&2
   echo "$CS_OUT" | head -20 >&2
   exit 1
@@ -59,4 +63,4 @@ echo "$CS_OUT" | egrep 'Authority|Signature|Identifier' || true
 
 echo ""
 echo "Built: $APP_BUNDLE"
-echo "Log: ~/.t650gestures.log"
+echo "Log: ~/.hidex.log"

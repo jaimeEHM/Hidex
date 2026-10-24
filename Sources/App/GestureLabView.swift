@@ -127,7 +127,10 @@ final class GestureLabModel: ObservableObject {
         if label.hasPrefix("Space") {
             switch SpaceSwitcher.lastFailure {
             case .none: detail = ok ? "OK — deberías ver el cambio de escritorio" : "FAIL"
-            case .accessibilityRequired: detail = "FAIL — Accesibilidad (1002). Activa T650Gestures en Ajustes."
+            case .accessibilityRequired: detail = L10n.t(
+                "FAIL — Accesibilidad (1002). Activa Hidex en Ajustes.",
+                "FAIL — Accessibility (1002). Enable Hidex in Settings."
+            )
             case .automationDenied: detail = "FAIL — Automatización System Events (-1743)"
             case .other(let s): detail = "FAIL — \(s)"
             }
@@ -342,7 +345,7 @@ final class GestureLabWindowController: NSObject {
         let root = GestureLabView(model: .shared)
         let hosting = NSHostingController(rootView: root)
         let win = NSWindow(contentViewController: hosting)
-        win.title = "Gesture Lab — T650"
+        win.title = L10n.gestureLabWindowTitle
         win.styleMask = [.titled, .closable, .miniaturizable, .resizable]
         win.setContentSize(NSSize(width: 800, height: 560))
         win.center()

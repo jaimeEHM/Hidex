@@ -8,20 +8,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
     private let engine = GestureEngine()
     private let preferences = PreferencesWindowController()
     private let gestureLab = GestureLabWindowController()
-    private var statusTitle = "Buscando T650…"
+    private var statusTitle = L10n.searchingDevice
     private var enabled = true
     private var battery = BatteryInfo.unknown
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppLog.reset()
-        AppLog.log("T650Gestures launched")
+        AppLog.log("\(L10n.appName) launched (\(L10n.versionLabel)) lang=\(L10n.lang)")
         session.delegate = self
         setupMenuBar()
         enableLoginItemOnFirstLaunch()
         ensureAccessibilityAndStart()
 
         NotificationCenter.default.addObserver(
-            forName: .t650ConfigDidChange, object: nil, queue: .main
+            forName: .hidexConfigDidChange, object: nil, queue: .main
         ) { [weak self] _ in
             self?.engine.reloadConfig()
             self?.rebuildMenu()
@@ -36,7 +36,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         AppLog.log("Terminating — disable raw mode")
         session.stop()
-        // Give HID thread a moment to send SET_RAW off.
         Thread.sleep(forTimeInterval: 0.35)
     }
 
@@ -71,7 +70,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
     }
 
     private func ensureAccessibilityAndStart() {
-        // Dual-mode raw: 1–2 finger native; 3+ via this app. No Settings prompts on launch.
         enabled = true
         engine.deferPointerToNative = true
         session.start()
@@ -84,12 +82,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
             "MC ↑/↓ uses Mission Control.app (no AX)"
         )
         if ax {
-            statusTitle = "Gestos activos"
+            statusTitle = L10n.gesturesActive
             updateStatusItemAppearance()
         } else {
-            // TCC was reset / grant missing for this Local-signed binary.
-            // One prompt + open Settings (required for Spaces; MC already works).
-            statusTitle = "Activa Accesibilidad → Spaces"
+            statusTitle = L10n.enableAccessibility
             updateStatusItemAppearance()
             let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
             _ = AXIsProcessTrustedWithOptions(opts)
@@ -99,9 +95,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
             accessibilityTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] timer in
                 guard let self else { return }
                 if AXIsProcessTrusted() {
-                    AppLog.log("Accessibility trusted=true — Spaces listos")
+                    AppLog.log("Accessibility trusted=true — Spaces ready")
                     timer.invalidate()
-                    self.statusTitle = "Gestos activos"
+                    self.statusTitle = L10n.gesturesActive
                     self.updateStatusItemAppearance()
                     self.rebuildMenu()
                 }
@@ -109,7 +105,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
         }
     }
 
-    // MARK: - Menu / battery icon
+    // MARK: - Menu / touchpad+battery icon
 
     private func setupMenuBar() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -119,35 +115,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
 
     private func updateStatusItemAppearance() {
         guard let btn = statusItem?.button else { return }
-        btn.image = batterySymbolImage()
+        btn.image = StatusItemIcon.image(percent: battery.percent, charging: battery.charging)
         btn.imagePosition = .imageLeft
         if let pct = battery.percent {
             btn.title = " \(pct)%"
         } else if battery.charging {
-            btn.title = " …" // charging, exact % unknown (HID++ coarse status)
+            btn.title = " …"
         } else {
             btn.title = " —"
         }
-        btn.toolTip = statusTitle
-    }
-
-    private func batterySymbolImage() -> NSImage? {
-        let name: String
-        if battery.charging {
-            name = "battery.100.bolt"
-        } else {
-            switch battery.percent ?? -1 {
-            case 90...100: name = "battery.100"
-            case 65..<90: name = "battery.75"
-            case 40..<65: name = "battery.50"
-            case 15..<40: name = "battery.25"
-            case 0..<15: name = "battery.0"
-            default: name = "rectangle.and.hand.point.up.left.filled"
-            }
-        }
-        let img = NSImage(systemSymbolName: name, accessibilityDescription: "T650 battery")
-        img?.isTemplate = true
-        return img
+        btn.toolTip = "\(L10n.appName) — \(statusTitle)"
     }
 
     private func rebuildMenu() {
@@ -160,35 +137,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
 
         let batLabel: String
         if let pct = battery.percent {
-            batLabel = battery.charging ? "Batería \(pct)% (cargando)" : "Batería \(pct)%"
+            batLabel = L10n.batteryPercent(pct, charging: battery.charging)
         } else if battery.charging {
-            batLabel = "Batería cargando…"
+            batLabel = L10n.batteryChargingUnknown
         } else {
-            batLabel = "Batería desconocida"
+            batLabel = L10n.batteryUnknown
         }
         let batItem = NSMenuItem(title: batLabel, action: nil, keyEquivalent: "")
         batItem.isEnabled = false
         menu.addItem(batItem)
         menu.addItem(.separator())
 
-        let prefs = NSMenuItem(title: "Preferencias…", action: #selector(openPreferences(_:)), keyEquivalent: ",")
+        let prefs = NSMenuItem(title: L10n.preferences, action: #selector(openPreferences(_:)), keyEquivalent: ",")
         prefs.target = self
         menu.addItem(prefs)
 
         let toggle = NSMenuItem(
-            title: enabled ? "Pausar gestos" : "Reanudar gestos",
+            title: enabled ? L10n.pauseGestures : L10n.resumeGestures,
             action: #selector(toggleEnabled(_:)), keyEquivalent: "p"
         )
         toggle.target = self
         menu.addItem(toggle)
 
-        let reconnect = NSMenuItem(title: "Reconectar HID++", action: #selector(reconnect(_:)), keyEquivalent: "r")
+        let reconnect = NSMenuItem(title: L10n.reconnectHID, action: #selector(reconnect(_:)), keyEquivalent: "r")
         reconnect.target = self
         menu.addItem(reconnect)
 
         menu.addItem(.separator())
 
-        let gestures = NSMenuItem(title: "Gestos actuales", action: nil, keyEquivalent: "")
+        let gestures = NSMenuItem(title: L10n.currentGestures, action: nil, keyEquivalent: "")
         gestures.isEnabled = false
         menu.addItem(gestures)
         menu.addItem(infoItem("3↑  \(cfg.threeFingerUp.displayName)"))
@@ -196,56 +173,61 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
         menu.addItem(infoItem("3/4←→ \(cfg.threeFingerLeft.displayName) / \(cfg.threeFingerRight.displayName)"))
         menu.addItem(infoItem("4↑  \(cfg.fourFingerUp.displayName)"))
         menu.addItem(infoItem("4↓  \(cfg.fourFingerDown.displayName)"))
-        menu.addItem(infoItem("2 dedos  Scroll nativo"))
+        menu.addItem(infoItem(L10n.twoFingerNativeScroll))
 
         menu.addItem(.separator())
 
         let labItem = NSMenuItem(
-            title: "Gesture Lab (gestos en vivo)…",
+            title: L10n.gestureLab,
             action: #selector(openGestureLab(_:)), keyEquivalent: "g"
         )
         labItem.target = self
         menu.addItem(labItem)
 
         let diagItem = NSMenuItem(
-            title: "Diagnosticar Spaces…",
+            title: L10n.diagnoseSpaces,
             action: #selector(diagnoseSpaces(_:)), keyEquivalent: ""
         )
         diagItem.target = self
         menu.addItem(diagItem)
 
         let axItem = NSMenuItem(
-            title: AXIsProcessTrusted() ? "Accesibilidad ✓" : "Activar Accesibilidad (Spaces)…",
+            title: AXIsProcessTrusted() ? L10n.accessibilityOK : L10n.enableAccessibilityMenu,
             action: #selector(requestAccessibility(_:)), keyEquivalent: ""
         )
         axItem.target = self
         menu.addItem(axItem)
 
         let autoItem = NSMenuItem(
-            title: "Permitir Automatización (System Events)…",
+            title: L10n.allowAutomation,
             action: #selector(requestAutomation(_:)), keyEquivalent: ""
         )
         autoItem.target = self
         menu.addItem(autoItem)
 
         let relaunchItem = NSMenuItem(
-            title: "Reiniciar app",
+            title: L10n.relaunchApp,
             action: #selector(relaunch(_:)), keyEquivalent: ""
         )
         relaunchItem.target = self
         menu.addItem(relaunchItem)
 
-        let logItem = NSMenuItem(title: "Abrir log", action: #selector(openLog(_:)), keyEquivalent: "l")
+        let logItem = NSMenuItem(title: L10n.openLog, action: #selector(openLog(_:)), keyEquivalent: "l")
         logItem.target = self
         menu.addItem(logItem)
 
-        let login = NSMenuItem(title: "Iniciar al encender", action: #selector(toggleLogin(_:)), keyEquivalent: "")
+        let login = NSMenuItem(title: L10n.startAtLogin, action: #selector(toggleLogin(_:)), keyEquivalent: "")
         login.target = self
         login.state = UserDefaults.standard.bool(forKey: "startAtLogin") ? .on : .off
         menu.addItem(login)
 
         menu.addItem(.separator())
-        menu.addItem(NSMenuItem(title: "Salir", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+
+        let ver = NSMenuItem(title: L10n.versionLabel, action: #selector(showAbout(_:)), keyEquivalent: "")
+        ver.target = self
+        menu.addItem(ver)
+
+        menu.addItem(NSMenuItem(title: L10n.quit, action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
     }
@@ -267,48 +249,74 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
         rebuildMenu()
     }
 
-    @objc private func reconnect(_ sender: NSMenuItem) {
-        statusTitle = "Reconectando…"
+    @objc private func reconnect(_ sender: Any?) {
+        statusTitle = L10n.reconnecting
         updateStatusItemAppearance()
         rebuildMenu()
         session.forceReconnect()
     }
 
-    @objc private func openLog(_ sender: NSMenuItem) {
+    @objc private func openLog(_ sender: Any?) {
         NSWorkspace.shared.open(AppLog.fileURL)
     }
 
-    @objc private func openGestureLab(_ sender: NSMenuItem) {
+    @objc private func openGestureLab(_ sender: Any?) {
         gestureLab.show()
     }
 
-    @objc private func diagnoseSpaces(_ sender: NSMenuItem) {
+    @objc private func diagnoseSpaces(_ sender: Any?) {
         let text = SpaceSwitcher.diagnose()
         let alert = NSAlert()
-        alert.messageText = "Diagnóstico Spaces"
-        alert.informativeText = text + "\n\nPrueba también 3 dedos ←→ y revisa ~/.t650gestures.log"
-        alert.addButton(withTitle: "OK")
+        alert.messageText = L10n.spacesDiagnosisTitle
+        alert.informativeText = text + "\n\n" + L10n.t(
+            "Prueba también 3 dedos ←→ y revisa ~/.hidex.log",
+            "Also try 3-finger ←→ and check ~/.hidex.log"
+        )
+        alert.addButton(withTitle: L10n.ok)
         if !AXIsProcessTrusted() {
-            alert.addButton(withTitle: "Abrir Accesibilidad")
+            alert.addButton(withTitle: L10n.openAccessibility)
         }
         if alert.runModal() == .alertSecondButtonReturn {
             InputInjector.requestAccessibilityFromMenu()
         }
     }
 
-    @objc private func requestAccessibility(_ sender: NSMenuItem) {
+    @objc private func requestAccessibility(_ sender: Any?) {
         InputInjector.requestAccessibilityFromMenu()
     }
 
-    @objc private func relaunch(_ sender: NSMenuItem) {
+    @objc private func relaunch(_ sender: Any?) {
         InputInjector.relaunchApp()
     }
 
-    @objc private func requestAutomation(_ sender: NSMenuItem) {
-        // prompt:true may show TCC; do not treat −600 as failure inside ensureAutomationPermission.
+    @objc private func requestAutomation(_ sender: Any?) {
         _ = InputInjector.ensureAutomationPermission(prompt: true)
-        // Trigger a real System Events call so TCC can appear if needed.
         _ = SpaceSwitcher.move(.right)
+    }
+
+    @objc private func showAbout(_ sender: Any?) {
+        let alert = NSAlert()
+        alert.messageText = L10n.appName
+        alert.informativeText = L10n.t(
+            """
+            \(L10n.versionLabel)
+
+            Gestos multitouch en espacio de usuario para touchpads inalámbricos HID++ en macOS.
+            Hardware compatible documentado: Logitech T650 + receptor Unifying.
+
+            No afiliado a Logitech ni Apple. Licencia MIT.
+            """,
+            """
+            \(L10n.versionLabel)
+
+            User-space multitouch gestures for wireless HID++ touchpads on macOS.
+            Documented compatible hardware: Logitech T650 + Unifying receiver.
+
+            Not affiliated with Logitech or Apple. MIT License.
+            """
+        )
+        alert.addButton(withTitle: L10n.ok)
+        alert.runModal()
     }
 
     @objc private func toggleLogin(_ sender: NSMenuItem) {

@@ -56,7 +56,7 @@ final class HIDPPSession {
         shouldRun = true
         let thread = Thread(target: self, selector: #selector(runLoop), object: nil)
         thread.qualityOfService = .userInteractive
-        thread.name = "com.t650.hidpp"
+        thread.name = "com.jimmks7.hidex.hidpp"
         thread.start()
     }
 
@@ -80,7 +80,7 @@ final class HIDPPSession {
                 AppLog.log("Mouse HID left to system (dual raw) — 1–2 finger nativos")
                 startDeviceWatcher()
                 pollBattery()
-                notify("T650 conectado — multitouch raw activo")
+                notify(L10n.connectedRaw)
                 AppLog.log(
                     "RawXY: \(rawInfo.xSize)x\(rawInfo.ySize) contacts=\(rawInfo.maxContacts) " +
                     "flipY=\(rawInfo.flipY) res=\(rawInfo.resolution)"

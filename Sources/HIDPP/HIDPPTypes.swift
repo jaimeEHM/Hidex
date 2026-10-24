@@ -51,7 +51,7 @@ enum HIDPPError: Error, CustomStringConvertible {
         case .openFailed: return "No se pudo abrir el dispositivo HID"
         case .writeFailed: return "Fallo al enviar reporte HID++"
         case .timeout: return "Timeout esperando respuesta HID++"
-        case .featureNotFound: return "Feature HID++ no disponible (¿T650 apagado?)"
+        case .featureNotFound: return "Feature HID++ unavailable (is the touchpad off?)"
         case .protocolError(let c): return "Error de protocolo HID++ 0x\(String(format: "%02X", c))"
         case .notConnected: return "Sesión HID++ no conectada"
         case .rawNotEnabled: return "Raw multitouch no quedó activo (bit0=0)"
@@ -109,7 +109,7 @@ struct BatteryInfo: Equatable {
 
 enum AppLog {
     static let fileURL: URL = FileManager.default.homeDirectoryForCurrentUser
-        .appendingPathComponent(".t650gestures.log")
+        .appendingPathComponent(".hidex.log")
 
     private static let lock = NSLock()
     private static let iso = ISO8601DateFormatter()

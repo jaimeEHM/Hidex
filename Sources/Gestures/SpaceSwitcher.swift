@@ -159,7 +159,10 @@ enum SpaceSwitcher {
         lines.append("Hotkey 79 (Space ←) enabled=\(left.map(String.init) ?? "?")")
         lines.append("Hotkey 81 (Space →) enabled=\(right.map(String.init) ?? "?")")
         if !ax {
-            lines.append("Acción: Accesibilidad → T650Gestures (/Applications), luego Reiniciar app.")
+            lines.append(L10n.t(
+                "Acción: Accesibilidad → Hidex (/Applications), luego Reiniciar app.",
+                "Action: Accessibility → Hidex (/Applications), then Relaunch app."
+            ))
             lines.append("Si el interruptor ya está on pero AX=false: quita la entrada, + de nuevo (firma Local).")
         }
         AppLog.log("SpaceSwitcher diagnose: \(lines.joined(separator: " | "))")

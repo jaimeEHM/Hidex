@@ -5,26 +5,28 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>es</string>
 	<key>CFBundleExecutable</key>
-	<string>T650Gestures</string>
+	<string>Hidex</string>
 	<key>CFBundleIdentifier</key>
-	<string>com.t650.gestures</string>
+	<string>com.jimmks7.hidex</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>T650 Gestures</string>
+	<string>Hidex</string>
+	<key>CFBundleDisplayName</key>
+	<string>Hidex</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.0</string>
+	<string>2.0.0</string>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>4</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>User-space HID++ multitouch for Logitech T650</string>
+	<string>Copyright © 2026 jimmks7. MIT License. Not affiliated with Logitech or Apple.</string>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>T650 Gestures necesita controlar System Events para cambiar de escritorio (Spaces) y cerrar Mission Control con gestos.</string>
+	<string>Hidex needs to control System Events to switch Spaces and dismiss Mission Control with gestures. / Hidex necesita controlar System Events para cambiar de escritorio (Spaces) y cerrar Mission Control con gestos.</string>
 </dict>
 </plist>

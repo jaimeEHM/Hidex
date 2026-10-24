@@ -145,7 +145,10 @@ struct PreferencesView: View {
                 actionPicker("Abajo ↓", selection: $model.config.fourFingerDown)
             }
             Section {
-                Text("El T650 reporta hasta 2 posiciones XY por frame; el número de dedos viene en finger_count. Desliza con 3 o 4 dedos para disparar el gesto.")
+                Text(L10n.t(
+                    "El touchpad compatible reporta hasta 2 posiciones XY por frame; el número de dedos viene en finger_count. Desliza con 3 o 4 dedos para disparar el gesto. (Hardware documentado: Logitech T650.)",
+                    "The compatible touchpad reports up to 2 XY positions per frame; finger count comes from finger_count. Swipe with 3 or 4 fingers to fire the gesture. (Documented hardware: Logitech T650.)"
+                ))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -177,7 +180,7 @@ final class PreferencesWindowController: NSObject {
         let root = PreferencesView(model: model)
         let hosting = NSHostingController(rootView: root)
         let win = NSWindow(contentViewController: hosting)
-        win.title = "Preferencias — T650 Gestures"
+        win.title = L10n.preferencesWindowTitle
         win.styleMask = [.titled, .closable, .miniaturizable]
         win.setContentSize(NSSize(width: 500, height: 520))
         win.center()

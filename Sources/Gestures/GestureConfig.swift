@@ -19,15 +19,15 @@ enum GestureAction: String, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .none: return "Ninguno"
+        case .none: return L10n.t("Ninguno", "None")
         case .missionControl: return "Mission Control (toggle)"
         case .appExpose: return "App Exposé"
-        case .dismiss: return "Cerrar overlay (Esc)"
-        case .desktop: return "Escritorio"
+        case .dismiss: return L10n.t("Cerrar overlay (Esc)", "Dismiss overlay (Esc)")
+        case .desktop: return L10n.t("Escritorio", "Desktop")
         case .spaceLeft: return "Space ←"
         case .spaceRight: return "Space →"
         case .launchpad: return "Launchpad"
-        case .notificationCenter: return "Centro de notificaciones"
+        case .notificationCenter: return L10n.t("Centro de notificaciones", "Notification Center")
         case .zoomIn: return "Zoom +"
         case .zoomOut: return "Zoom −"
         case .lookup: return "Look Up"
@@ -36,7 +36,7 @@ enum GestureAction: String, CaseIterable, Identifiable {
 }
 
 extension Notification.Name {
-    static let t650ConfigDidChange = Notification.Name("T650ConfigDidChange")
+    static let hidexConfigDidChange = Notification.Name("HidexConfigDidChange")
 }
 
 struct GestureConfig: Equatable {
@@ -61,7 +61,7 @@ struct GestureConfig: Equatable {
     var fourFingerUp: GestureAction = .desktop
     var fourFingerDown: GestureAction = .launchpad
 
-    static let defaultsKey = "T650GestureConfig"
+    static let defaultsKey = "HidexGestureConfig"
 
     static func load() -> GestureConfig {
         guard let data = UserDefaults.standard.data(forKey: defaultsKey),
@@ -82,7 +82,7 @@ struct GestureConfig: Equatable {
         if let data = try? JSONEncoder().encode(c) {
             UserDefaults.standard.set(data, forKey: Self.defaultsKey)
         }
-        NotificationCenter.default.post(name: .t650ConfigDidChange, object: nil)
+        NotificationCenter.default.post(name: .hidexConfigDidChange, object: nil)
     }
 
     static func resetToDefaults() -> GestureConfig {

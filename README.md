@@ -1,22 +1,29 @@
-# T650 Gestures
+# Hidex
 
-**Driver en espacio de usuario** para el Logitech Wireless Rechargeable Touchpad **T650** en macOS (Apple Silicon e Intel).
+**[Español](#español)** · **[English](#english)**
 
-Habla **HID++ 2.0** con el receptor Unifying, activa multitouch raw (`TouchPadRawXY` `0x6100`) y traduce gestos a acciones de macOS: Mission Control, Spaces, Escritorio, taps, etc.
+> Idioma de la documentación en GitHub: español primero, luego inglés.  
+> En la app: si el idioma preferido del macOS empieza por `en` → inglés; **en cualquier otro caso → español**.
 
-> **No afiliado a Logitech ni a Apple.** Proyecto comunitario independiente. Ver [NOTICE.md](NOTICE.md) y [LEGAL.md](LEGAL.md).
+Gestos multitouch en **espacio de usuario** para touchpads inalámbricos **HID++** en macOS (Apple Silicon e Intel).
+
+**Hardware compatible documentado:** Logitech Wireless Rechargeable Touchpad **T650** + receptor Unifying.  
+**No afiliado a Logitech ni a Apple.** Marca propia: [Docs/BRAND.md](Docs/BRAND.md).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![macOS 13+](https://img.shields.io/badge/macOS-13%2B-blue.svg)](#requisitos)
+[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+[![macOS 13+](https://img.shields.io/badge/macOS-13%2B-lightgrey.svg)](#requisitos)
 [![Universal](https://img.shields.io/badge/binary-arm64%20%7C%20x86__64-success.svg)](#compilar)
 
 ---
 
-## ¿Por qué existe?
+## Español
 
-El T650 funciona en Mac como ratón básico, pero **macOS no expone gestos multitouch** del pad Logitech como en un Magic Trackpad. En Linux, el kernel / Solaar / libratbag documentan HID++ raw XY. Esta app trae esa idea a macOS **sin kext**: solo IOKit + inyección de gestos.
+### ¿Qué es Hidex?
 
-## Características
+macOS trata muchos touchpads Logitech Unifying como un ratón básico: mover y hacer clic, **sin** gestos de Mission Control / Spaces como en un Magic Trackpad. Hidex habla **HID++ 2.0**, activa informes multitouch raw (`TouchPadRawXY` `0x6100`) y traduce gestos a acciones del sistema **sin kext**.
+
+### Características
 
 | Gesto | Acción por defecto |
 |--------|---------------------|
@@ -26,130 +33,166 @@ El T650 funciona en Mac como ratón básico, pero **macOS no expone gestos multi
 | Toque 2 dedos | Clic derecho *(configurable)* |
 | 3 dedos ↑ | Mission Control (abrir) |
 | 3 dedos ↓ | Cerrar Mission Control |
-| 3 / 4 dedos ←→ | Cambiar Spaces (escritorios) |
-| 4 dedos ↑ | Mostrar Escritorio (F11) |
-| 4 dedos ↓ | Launchpad o App Exposé (si no hay Launchpad.app) |
+| 3 / 4 dedos ←→ | Cambiar Spaces |
+| 4 dedos ↑ | Escritorio (F11) |
+| 4 dedos ↓ | Launchpad o App Exposé |
 | Clic físico | Botón del pad (HID nativo) |
 
-Extras:
+Extras: icono de menú tipo **touchpad** con **% de batería**, preferencias, Gesture Lab, inicio al encender.
 
-- Icono de menú con **batería** aproximada (HID++ `0x1000`)
-- **Preferencias** (velocidades, taps, mapeo de gestos 3/4 dedos)
-- **Gesture Lab** — visualiza dedos y prueba inyección (Spaces / MC)
-- Inicio al encender (opcional)
+### Icono de la barra de menú
 
-## Requisitos
+No es un icono genérico de “batería del Mac”. Hidex dibuja una **silueta de touchpad** (con contactos multitouch y una barra de carga) y muestra el **porcentaje** junto al icono (`78%`). El menú repite el detalle de batería y la **versión** (`Hidex 2.0.0 (4)`).
 
-- macOS **13** o posterior (probado en macOS 27 / Apple Silicon)
-- Touchpad **T650** + receptor **Unifying** (WPID dispositivo `0x4101`, receptor típico `0xC52B`)
+### Requisitos
+
+- macOS **13+**
+- Touchpad compatible (perfil documentado: **T650**, WPID `0x4101`) + receptor Unifying (`0xC52B` típico)
 - Permisos:
-  1. **Accesibilidad** → `T650Gestures` (obligatorio para Spaces y taps inyectados)
-  2. **Automatización** → `T650Gestures` → **System Events** (Spaces vía ⌃←/→)
-  3. Atajos de teclado → Mission Control → *Mover a la izquierda/derecha un espacio* activos
+  1. **Accesibilidad** → Hidex  
+  2. **Automatización** → Hidex → **System Events**  
+  3. Atajos de Mission Control (mover espacio izq/der) activos
 
-## Instalación (usuario)
+### Instalación (usuario)
 
-### Opción A — DMG / PKG (release)
-
-1. Descarga `T650Gestures-*-universal.dmg` o `.pkg` desde [Releases](../../releases).
-2. Arrastra la app a **Aplicaciones** (DMG) o ejecuta el PKG.
-3. Abre la app. Si Gatekeeper avisa: *Privacidad y seguridad → Abrir de todas formas* (el binario de GitHub no está notarizado con Developer ID de Apple salvo que un maintainer lo firme).
-4. Concede **Accesibilidad** y **Automatización → System Events**.
-5. Menú de la batería → **Reiniciar app** tras conceder permisos.
-
-### Opción B — Desde el código
+1. Descarga `Hidex-*-universal.dmg` o `.pkg` desde [Releases](https://github.com/jimmks7/Hidex/releases).
+2. Arrastra a **Aplicaciones** (DMG) o ejecuta el PKG.
+3. **Gatekeeper / firma**
+   - Los binarios de release **no están notarizados** con Apple Developer ID (coste de cuenta de desarrollador).
+   - En el primer arranque: *Privacidad y seguridad → Abrir de todas formas*.
+   - Opcional (desarrolladores / usuarios avanzados): tras instalar, genera una **autofirma local estable** en *tu* Mac para que Accesibilidad no se rompa entre rebuilds:
 
 ```bash
-git clone https://github.com/jaimeEHM/T650Gestures.git
-cd T650Gestures
-./install.sh                  # arm64 rápido → /Applications
-# o instalador universal:
+./scripts/self-sign-installed.sh
+```
+
+   Eso **no** sustituye la notarización de Apple ante Gatekeeper en otra máquina; solo crea la identidad **Hidex Local** en el llavero del instalador.
+
+4. Concede Accesibilidad + Automatización → System Events.
+5. Menú → **Reiniciar app**.
+
+### Uso diario
+
+1. Conecta el Unifying y enciende el touchpad.  
+2. Abre **Hidex** (icono touchpad + `%` en la barra de menú).  
+3. Ajusta gestos en **Preferencias…**  
+4. Si Spaces fallan: **Diagnosticar Spaces…** / **Gesture Lab**.  
+5. Log: `~/.hidex.log`  
+6. Versión: al final del menú o diálogo Acerca de.
+
+### Cómo funciona (implementación)
+
+```mermaid
+flowchart LR
+  USB["Receptor Unifying USB"] --> HID["IOKit HID"]
+  HID --> S["HIDPPSession"]
+  S -->|"frames 0x6100"| A["DualXYAssembler / RawXYParser"]
+  A --> T["TouchTracker"]
+  T --> G["GestureEngine"]
+  G -->|"1–2 dedos"| N["Ratón HID nativo"]
+  G -->|"taps / MC / F11"| I["InputInjector"]
+  G -->|"Spaces ←→"| SE["SpaceSwitcher → System Events"]
+  S -->|"0x1000"| B["Batería % en menú"]
+```
+
+1. **Detección:** localiza el receptor Unifying y el dispositivo emparejado (WPID documentado `0x4101`).  
+2. **Raw multitouch:** `SET_RAW` con flags dual (`0x15`) → eventos XY + movimiento/scroll nativos para 1–2 dedos.  
+3. **Clasificación:** `GestureEngine` usa el `finger_count` del frame al disparar (3 vs 4), no solo el pico.  
+4. **Mission Control:** lanza `Mission Control.app` (no necesita Automatización).  
+5. **Spaces:** System Events (`⌃←` / `⌃→`); los `CGEvent` sintéticos de Ctrl+flecha suelen ser ignorados por WindowServer en macOS reciente.  
+6. **Batería:** feature HID++ `0x1000` (a veces nivel grueso).
+
+Detalle de protocolo: [Docs/PROTOCOL.md](Docs/PROTOCOL.md) · checklist Spaces: [Docs/SPACES_CHECKLIST.md](Docs/SPACES_CHECKLIST.md).
+
+### Compilar
+
+```bash
+git clone https://github.com/jimmks7/Hidex.git
+cd Hidex
+./install.sh                     # nativo → /Applications
+./scripts/package-installer.sh   # universal → dist/
+```
+
+Versión fuente de verdad: archivo [`VERSION`](VERSION) + [`CHANGELOG.md`](CHANGELOG.md) ([Keep a Changelog](https://keepachangelog.com/) + SemVer).
+
+### Licencia y terceros
+
+- Código: **[MIT](LICENSE)** (texto legal en inglés; [traducción ES](LICENSE.es.md))  
+- Atribuciones: [NOTICE.md](NOTICE.md) · notas: [LEGAL.md](LEGAL.md)  
+- Referencia de comportamiento (sin copiar código): Solaar (GPL), libratbag (MIT), docs HID++ públicas  
+- **Publicación pública: permitida** con estas atribuciones y sin redistribuir binarios propietarios de Logitech
+
+### Autor
+
+[@jimmks7](https://github.com/jimmks7) — aporte a la comunidad de quien sigue usando touchpads Unifying en Mac.
+
+---
+
+## English
+
+### What is Hidex?
+
+macOS often exposes Logitech Unifying touchpads as a basic mouse: move and click, **without** Magic Trackpad–style Mission Control / Spaces gestures. Hidex speaks **HID++ 2.0**, enables raw multitouch reports (`TouchPadRawXY` `0x6100`), and maps gestures to system actions — **no kernel extension**.
+
+### Features
+
+| Gesture | Default action |
+|---------|----------------|
+| 1-finger move | Native pointer (dual HID++ mode) |
+| 1-finger tap | Left click *(configurable)* |
+| 2 fingers | Native scroll |
+| 2-finger tap | Right click *(configurable)* |
+| 3-finger ↑ | Mission Control (open) |
+| 3-finger ↓ | Dismiss Mission Control |
+| 3 / 4-finger ←→ | Switch Spaces |
+| 4-finger ↑ | Show Desktop (F11) |
+| 4-finger ↓ | Launchpad or App Exposé |
+| Physical click | Pad button (native HID) |
+
+Extras: **touchpad-style** menu icon with live **battery %**, preferences, Gesture Lab, launch at login.
+
+### Menu bar icon
+
+Not a generic Mac “battery” glyph. Hidex draws a **touchpad silhouette** (multitouch contacts + charge bar) and shows the **percentage** beside it. The menu also lists battery detail and **version** (`Hidex 2.0.0 (4)`).
+
+### Requirements
+
+- macOS **13+**
+- Compatible touchpad (documented profile: **Logitech T650**, WPID `0x4101`) + Unifying receiver
+- Permissions: **Accessibility**, **Automation → System Events**, Mission Control space-switch shortcuts enabled
+
+### Install
+
+1. Download `Hidex-*-universal.dmg` / `.pkg` from [Releases](https://github.com/jimmks7/Hidex/releases).  
+2. Drag to Applications or run the PKG.  
+3. **Signing / Gatekeeper:** release builds are **not Apple-notarized**. Use *Open Anyway*. Optional local resign for stable Accessibility on *your* machine: `./scripts/self-sign-installed.sh` (does **not** replace notarization for other Macs).  
+4. Grant Accessibility + Automation.  
+5. Menu → **Relaunch app**.
+
+### Daily use
+
+Connect Unifying → power the pad → run Hidex → tune **Preferences…** → diagnose with Gesture Lab if needed → log at `~/.hidex.log`.
+
+### Architecture
+
+Same diagram as above (Mermaid). Protocol notes: [Docs/PROTOCOL.md](Docs/PROTOCOL.md).
+
+### Build
+
+```bash
+git clone https://github.com/jimmks7/Hidex.git
+cd Hidex
 ./scripts/package-installer.sh
 ```
 
-`install.sh` firma con una identidad local **T650Gestures Local** cuando es posible, para que Accesibilidad sobreviva a rebuilds (evita firma ad hoc que cambia el cdhash).
+Versioning: [`VERSION`](VERSION) + [`CHANGELOG.md`](CHANGELOG.md) (Keep a Changelog + SemVer).
 
-## Compilar
+### License
 
-```bash
-# Solo arquitectura nativa (más rápido)
-./build.sh
+- **[MIT](LICENSE)** (canonical English legal text; [Spanish informative translation](LICENSE.es.md))  
+- Third-party credits: [NOTICE.md](NOTICE.md) · [LEGAL.md](LEGAL.md)  
+- Public GitHub distribution is appropriate when attributions are kept and no proprietary Logitech binaries are shipped
 
-# Universal arm64 + x86_64 + DMG + PKG → dist/
-./scripts/package-installer.sh
-```
+### Author
 
-Artefactos en `dist/`:
-
-- `T650Gestures-VERSION-universal.dmg`
-- `T650Gestures-VERSION-universal.pkg`
-- `SHA256SUMS.txt`
-
-## Uso diario
-
-1. Enchufa el Unifying y enciende el T650.
-2. Arranca **T650 Gestures** (icono de batería en la barra de menú).
-3. Ajusta toques y gestos en **Preferencias…**
-4. Si Spaces fallan: menú → **Diagnosticar Spaces…** / **Gesture Lab**.
-5. Log: `~/.t650gestures.log`
-
-## Cómo funciona (arquitectura)
-
-```text
-Unifying (USB) ──HID++──► HIDPPSession ──frames──► DualXYAssembler
-                                                      │
-                                                      ▼
-                                               TouchTracker
-                                                      │
-                                                      ▼
-                                               GestureEngine
-                                 ┌────────────────────┼────────────────────┐
-                                 ▼                    ▼                    ▼
-                          Native HID mouse      InputInjector        SpaceSwitcher
-                          (1–2 dedos dual)   (MC.app, taps, …)   (System Events ⌃←/→)
-```
-
-- **Modo dual raw** (`SET_RAW` flags `0x15`): multitouch HID++ **y** movimiento/scroll nativos.
-- **Mission Control** se abre/cierra con `Mission Control.app` (no requiere Automatización).
-- **Spaces** usan System Events (`key code 123/124 using control down`); los `CGEvent` sintéticos de Ctrl+flecha los ignora WindowServer en macOS reciente.
-
-Detalle del protocolo: [Docs/PROTOCOL.md](Docs/PROTOCOL.md).
-
-## Licencia y comunidad
-
-- Código propio: **[MIT](LICENSE)** — Copyright © 2026 Jaime EHM ([@jaimeEHM](https://github.com/jaimeEHM))
-- Atribuciones y relación con otros proyectos: **[NOTICE.md](NOTICE.md)**
-- Notas para publicar / no afiliación: **[LEGAL.md](LEGAL.md)**
-
-### Proyectos y documentación a respetar / citar
-
-Gracias a la comunidad que documentó HID++ y gestos en macOS:
-
-- [Solaar](https://github.com/pwr-Solaar/Solaar) (GPL-2.0+) — referencia de comportamiento HID++ en Linux  
-- [libratbag](https://github.com/libratbag/libratbag) (MIT)  
-- Documentación TouchPadRawXY / HID++ (colección [lekensteyn](https://lekensteyn.nl/logitech.html), docs CPG HID++ 2.0)  
-- Experiencia comunitaria sobre Spaces + System Events en macOS moderno  
-
-Este repositorio **no copia** el código fuente de Solaar; reimplementa el cliente en Swift a partir de especificaciones y observación.
-
-## Limitaciones
-
-- No aparece como Magic Trackpad nativo (no hay driver Kernel/DriverKit).
-- Launchpad.app puede no existir en macOS muy recientes → fallback a App Exposé.
-- Batería HID++ `0x1000` es a veces un nivel grueso (p. ej. “good” ≈ 50 %), no un gauge fino.
-- Sin notarización Apple, Gatekeeper mostrará advertencias en máquinas ajenas.
-- APIs de Spaces no son públicas; el enfoque System Events puede cambiar en futuros macOS.
-
-## Contribuir
-
-Issues y PRs bienvenidos: dispositivos Unifying distintos, mejoras de gestos, localización, CI de build universal.
-
-1. Fork → rama → PR  
-2. No incluir binarios de Logitech ni secretos de firma Apple  
-3. Mantener `NOTICE.md` al reutilizar documentación de terceros  
-
-## Autor
-
-**Jaime EHM** — [@jaimeEHM](https://github.com/jaimeEHM)
-
-Hecho como aporte a quien sigue usando el T650 en Mac y quiere gestos de verdad.
+[@jimmks7](https://github.com/jimmks7)

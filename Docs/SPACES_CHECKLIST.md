@@ -1,34 +1,25 @@
-# Checklist Spaces + Mission Control
+# Checklist Spaces / Spaces checklist
 
-Tras `./install.sh` (firma **T650Gestures Local**, no ad hoc):
+## Español
 
-## Una sola vez — Accesibilidad efectiva
+Tras `./install.sh` o el DMG (firma **Hidex Local** preferible, no ad hoc):
 
-1. Ajustes → Privacidad y seguridad → Accesibilidad.
-2. Quita entradas viejas de T650Gestures (build/ o ad hoc).
-3. **+** → `/Applications/T650Gestures.app` → activar.
-4. Menú de la app → **Reiniciar app**.
-5. Menú → **Diagnosticar Spaces…** → debe decir `AXIsProcessTrusted=true`.
-6. Si pide Automatización → System Events, aceptar.
+1. Ajustes → Privacidad y seguridad → **Accesibilidad**
+2. Quita entradas viejas de Hidex / T650Gestures (build/ o ad hoc).
+3. **+** → `/Applications/Hidex.app` → activar.
+4. Automatización → Hidex → **System Events**.
+5. Menú Hidex → **Reiniciar app**.
+6. Prueba 3 dedos ←→. Si falla: **Diagnosticar Spaces…** / Gesture Lab.
+7. Opcional: `./scripts/self-sign-installed.sh` para reafirmar identidad local.
 
-## Mission Control (no debe romperse)
+## English
 
-- [ ] 3 dedos ↑ → abre Mission Control (`Inject MC OPEN` en log).
-- [ ] Con MC abierto, 3 dedos ↓ → cierra (`Inject MC CLOSE`).
-- [ ] Con MC abierto, 3 dedos ↑ → no cierra (`MC already open — ignore ↑`).
+After install (prefer **Hidex Local** signing, not ad-hoc):
 
-## Spaces
-
-- [ ] 3 dedos ← → cambia escritorio (`SpaceSwitcher System Events ← OK`).
-- [ ] 3 dedos → → cambia escritorio (`… → OK`).
-- [ ] Diez swipes laterales seguidos → **cero** diálogos de Accesibilidad.
-
-## Hotkeys del sistema
-
-Ya verificados en esta máquina: symbolic hotkeys **79/81** enabled.
-Si Spaces no cambian con AX=true: Teclado → Atajos → Mission Control → Mover izquierda/derecha un espacio.
-
-## Phase 2 (Dock swipe IOHID)
-
-No implementada: solo si System Events falla **con** `AXIsProcessTrusted=true`.
-Camino primario en macOS 27 = System Events ⌃←/→.
+1. System Settings → Privacy & Security → **Accessibility**
+2. Remove stale Hidex / T650Gestures entries.
+3. Add `/Applications/Hidex.app` and enable it.
+4. Automation → Hidex → **System Events**.
+5. Hidex menu → **Relaunch app**.
+6. Try 3-finger ←→. If it fails: Diagnose Spaces / Gesture Lab.
+7. Optional: `./scripts/self-sign-installed.sh` for a stable local identity.
