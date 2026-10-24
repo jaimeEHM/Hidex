@@ -9,3 +9,5 @@ DerivedData/
 *.pkg
 .idea/
 .vscode/
+# Keep Assets/AppIcon.icns + master PNG; ignore regenerable iconset tree if huge
+Assets/AppIcon.iconset/

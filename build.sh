@@ -42,6 +42,10 @@ swiftc -O \
   "${SOURCES[@]}"
 
 cp "$ROOT/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
+mkdir -p "$APP_BUNDLE/Contents/Resources"
+if [[ -f "$ROOT/Assets/AppIcon.icns" ]]; then
+  cp "$ROOT/Assets/AppIcon.icns" "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+fi
 /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$APP_BUNDLE/Contents/Info.plist"
 
 SIGN_ID="$("$ROOT/scripts/ensure-signing-identity.sh")"
