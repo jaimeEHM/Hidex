@@ -87,10 +87,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
         } else {
             statusTitle = L10n.enableAccessibility
             updateStatusItemAppearance()
-            let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-            _ = AXIsProcessTrustedWithOptions(opts)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                InputInjector.openAccessibilitySettings()
+            // Recent macOS often never shows the TCC popup — open Settings + help alert.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                InputInjector.requestAccessibilityFromMenu()
             }
             accessibilityTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] timer in
                 guard let self else { return }
@@ -108,7 +107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
     // MARK: - Menu / touchpad+battery icon
 
     private func setupMenuBar() {
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         updateStatusItemAppearance()
         rebuildMenu()
     }
@@ -116,14 +115,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, HIDPPSessionDelegate {
     private func updateStatusItemAppearance() {
         guard let btn = statusItem?.button else { return }
         btn.image = StatusItemIcon.image(percent: battery.percent, charging: battery.charging)
-        btn.imagePosition = .imageLeft
-        if let pct = battery.percent {
-            btn.title = " \(pct)%"
-        } else if battery.charging {
-            btn.title = " …"
-        } else {
-            btn.title = " —"
-        }
+        btn.imagePosition = .imageOnly
+        btn.title = ""
         btn.toolTip = "\(L10n.appName) — \(statusTitle)"
     }
 

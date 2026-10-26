@@ -44,29 +44,42 @@ enum InputInjector {
         guard down != leftDown else { return }
         leftDown = down
         let loc = cgMouseLocation()
+        let src = CGEventSource(stateID: .hidSystemState)
         let type: CGEventType = down ? .leftMouseDown : .leftMouseUp
-        if let e = CGEvent(mouseEventSource: nil, mouseType: type,
+        if let e = CGEvent(mouseEventSource: src, mouseType: type,
                            mouseCursorPosition: loc, mouseButton: .left) {
             e.post(tap: .cghidEventTap)
         }
     }
 
+    /// Soft tap → click. Uses HID-system source + Quartz cursor coords (not AppKit Y-flip),
+    /// which is what actually registers on recent macOS; bare `nil` source often no-ops.
     static func click(button: CGMouseButton = .left) {
         let loc = cgMouseLocation()
+        let src = CGEventSource(stateID: .hidSystemState)
         let downType: CGEventType = button == .left ? .leftMouseDown :
             (button == .right ? .rightMouseDown : .otherMouseDown)
         let upType: CGEventType = button == .left ? .leftMouseUp :
             (button == .right ? .rightMouseUp : .otherMouseUp)
-        if let down = CGEvent(mouseEventSource: nil, mouseType: downType,
-                              mouseCursorPosition: loc, mouseButton: button) {
-            if button == .center { down.setIntegerValueField(.mouseEventButtonNumber, value: 2) }
-            down.post(tap: .cghidEventTap)
+
+        guard let down = CGEvent(mouseEventSource: src, mouseType: downType,
+                                 mouseCursorPosition: loc, mouseButton: button),
+              let up = CGEvent(mouseEventSource: src, mouseType: upType,
+                               mouseCursorPosition: loc, mouseButton: button)
+        else {
+            AppLog.log("Click inject create failed button=\(button.rawValue)")
+            return
         }
-        if let up = CGEvent(mouseEventSource: nil, mouseType: upType,
-                            mouseCursorPosition: loc, mouseButton: button) {
-            if button == .center { up.setIntegerValueField(.mouseEventButtonNumber, value: 2) }
-            up.post(tap: .cghidEventTap)
+        if button == .center {
+            down.setIntegerValueField(.mouseEventButtonNumber, value: 2)
+            up.setIntegerValueField(.mouseEventButtonNumber, value: 2)
         }
+        down.setIntegerValueField(.mouseEventClickState, value: 1)
+        up.setIntegerValueField(.mouseEventClickState, value: 1)
+        down.post(tap: .cghidEventTap)
+        // Zero-gap down/up is often dropped by WindowServer on macOS 15+.
+        usleep(16_000)
+        up.post(tap: .cghidEventTap)
     }
 
     static func scroll(dx: CGFloat, dy: CGFloat) {
@@ -118,23 +131,73 @@ enum InputInjector {
     }
 
     static func openAccessibilitySettings() {
+        // macOS 13–27: try several deep links; System Settings still uses the
+        // x-apple.systempreferences scheme (not x-apple.systemsettings).
         let urls = [
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Privacy_Accessibility",
+            "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension?Accessibility",
             "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility",
             "x-apple.systempreferences:com.apple.Settings.PrivacySecurity.extension?Privacy_Accessibility"
         ]
         for s in urls {
-            if let u = URL(string: s) {
-                NSWorkspace.shared.open(u)
+            if let u = URL(string: s), NSWorkspace.shared.open(u) {
+                AppLog.log("Opened Accessibility settings via \(s)")
                 return
+            }
+        }
+        if let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.systempreferences") {
+            NSWorkspace.shared.openApplication(at: app, configuration: NSWorkspace.OpenConfiguration())
+            AppLog.log("Opened System Settings (no deep link worked)")
+        }
+    }
+
+    /// Open Settings + explain: on recent macOS the system AX dialog often never appears.
+    static func requestAccessibilityFromMenu() {
+        let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
+        let trusted = AXIsProcessTrustedWithOptions(opts)
+        AppLog.log("Accessibility request prompt; trusted=\(trusted)")
+        openAccessibilitySettings()
+        if !trusted {
+            DispatchQueue.main.async {
+                showAccessibilityHelpAlert()
             }
         }
     }
 
-    /// Menu-only: request AX prompt once and open Settings.
-    static func requestAccessibilityFromMenu() {
-        let opts = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): true] as CFDictionary
-        _ = AXIsProcessTrustedWithOptions(opts)
-        openAccessibilitySettings()
+    /// Manual steps — required when macOS suppresses the TCC popup.
+    static func showAccessibilityHelpAlert() {
+        let alert = NSAlert()
+        alert.messageText = L10n.t(
+            "Activa Accesibilidad para Hidex",
+            "Enable Accessibility for Hidex"
+        )
+        alert.informativeText = L10n.t(
+            """
+            En macOS reciente el aviso del sistema a menudo no aparece. Hazlo a mano:
+
+            1. Ajustes → Privacidad y seguridad → Accesibilidad
+            2. Pulsa + y elige /Applications/Hidex.app
+            3. Activa el interruptor de Hidex
+            4. Vuelve aquí → menú Hidex → Reiniciar app
+
+            Sin esto, Spaces ←→ no funcionan (Mission Control ↑ sí).
+            """,
+            """
+            On recent macOS the system prompt often never appears. Do it manually:
+
+            1. Settings → Privacy & Security → Accessibility
+            2. Click + and choose /Applications/Hidex.app
+            3. Turn on Hidex
+            4. Come back → Hidex menu → Relaunch app
+
+            Without this, Spaces ←→ will not work (Mission Control ↑ still does).
+            """
+        )
+        alert.addButton(withTitle: L10n.openAccessibility)
+        alert.addButton(withTitle: L10n.ok)
+        if alert.runModal() == .alertFirstButtonReturn {
+            openAccessibilitySettings()
+        }
     }
 
     static func relaunchApp() {
@@ -345,7 +408,12 @@ enum InputInjector {
         }
     }
 
+    /// Quartz global cursor position (top-left origin). Prefer live CGEvent location
+    /// over converting NSEvent.mouseLocation — Y-flip mistakes send clicks off-target.
     private static func cgMouseLocation() -> CGPoint {
+        if let quartz = CGEvent(source: nil)?.location {
+            return quartz
+        }
         let loc = NSEvent.mouseLocation
         guard let screen = NSScreen.screens.first(where: { NSMouseInRect(loc, $0.frame, false) })
                 ?? NSScreen.main else {

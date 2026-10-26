@@ -1,7 +1,7 @@
 import AppKit
 
-/// Menu-bar icon: touchpad silhouette + optional charge cue.
-/// Battery **percentage** is shown as the status-item title next to this image.
+/// Menu-bar icon: touchpad silhouette + optional charge cue (bar / bolt).
+/// Numeric battery % lives only in the menu, not beside the icon.
 enum StatusItemIcon {
     static func image(percent: Int?, charging: Bool, size: CGFloat = 16) -> NSImage {
         let img = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in

@@ -37,6 +37,10 @@ final class GestureEngine {
     /// Peak fingers during the current contact (so 1→2→3 still counts as 3-finger swipe).
     private var peakFingerCount = 0
     private var sessionMaxMove: CGFloat = 0
+    /// Centroid at gesture start — displacement from here is a better tap-vs-drag signal
+    /// than summing noisy per-frame deltas.
+    private var startCentroid: CGPoint?
+    private var inContact = false
 
     func applyInfo(_ info: TouchPadRawInfo) {
         if info.xSize > 0 { tracker.xSize = CGFloat(info.xSize) }
@@ -58,7 +62,10 @@ final class GestureEngine {
 
         if count == 0 {
             publishLab()
-            finishGesture()
+            // Only finish once per contact — EOF spam would reset peak and kill tap logic.
+            if inContact {
+                finishGesture()
+            }
             return
         }
 
@@ -68,14 +75,20 @@ final class GestureEngine {
             beginGesture(fingerCount: count, peak: peakFingerCount)
         }
 
+        if startCentroid == nil, let c = currentCentroid() {
+            startCentroid = c
+        }
+        if let start = startCentroid, let now = currentCentroid() {
+            let d = hypot(now.x - start.x, now.y - start.y)
+            sessionMaxMove = max(sessionMaxMove, d)
+        }
+
         let delta = tracker.averageDelta()
         // Clamp runaway deltas (bad frames / first sample after parse bugs).
         let safeDelta = CGSize(
             width: max(-80, min(80, delta.width)),
             height: max(-80, min(80, delta.height))
         )
-        let moveMag = hypot(safeDelta.width, safeDelta.height)
-        sessionMaxMove = max(sessionMaxMove, hypot(accumulated.width, accumulated.height) + moveMag)
         accumulated.width += safeDelta.width
         accumulated.height += safeDelta.height
 
@@ -184,10 +197,12 @@ final class GestureEngine {
             touchStartTime = Date()
             accumulated = .zero
             sessionMaxMove = 0
+            startCentroid = currentCentroid()
             swipeFired = false
             pinchFired = false
             pinchStartDistance = tracker.pinchDistance()
         }
+        inContact = true
         lastFingerCount = fingerCount
 
         switch max(fingerCount, peak) {
@@ -204,9 +219,19 @@ final class GestureEngine {
         AppLog.log("Gesture begin count=\(fingerCount) peak=\(peak) mode=\(mode)")
     }
 
+    private func currentCentroid() -> CGPoint? {
+        let active = tracker.activeTouches
+        guard !active.isEmpty else { return nil }
+        let sx = active.reduce(CGFloat(0)) { $0 + $1.x }
+        let sy = active.reduce(CGFloat(0)) { $0 + $1.y }
+        let n = CGFloat(active.count)
+        return CGPoint(x: sx / n, y: sy / n)
+    }
+
     private func finishGesture() {
+        inContact = false
         let duration = Date().timeIntervalSince(touchStartTime)
-        let travel = max(sessionMaxMove, hypot(accumulated.width, accumulated.height))
+        let travel = sessionMaxMove
         // Use peak at lift; a 2→1 release still counts as two-finger tap.
         let fingers = peakFingerCount
         let isTap = duration < config.tapMaxDuration
@@ -225,12 +250,20 @@ final class GestureEngine {
                 InputInjector.click(button: .center)
                 AppLog.log("Tap 3F → clic medio")
             }
+        } else if fingers == 1 || fingers == 2 {
+            AppLog.log(
+                "Tap skip \(fingers)F dur=\(String(format: "%.0f", duration * 1000))ms " +
+                "move=\(Int(travel)) lim=\(Int(config.tapMaxDuration * 1000))ms/\(Int(config.tapMaxMove))" +
+                (swipeFired ? " swipe" : "") + (pauseInjection ? " paused" : "")
+            )
         }
 
         mode = .idle
         lastFingerCount = 0
         peakFingerCount = 0
         accumulated = .zero
+        sessionMaxMove = 0
+        startCentroid = nil
         swipeFired = false
         pinchStartDistance = nil
         pinchFired = false

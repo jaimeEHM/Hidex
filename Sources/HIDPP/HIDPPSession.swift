@@ -118,14 +118,22 @@ final class HIDPPSession {
     // MARK: - Connect
 
     private func connect() throws {
-        let candidates = HIDLocator.findHIDPPCandidates()
+        // Prefer classic Unifying (T650) over Bolt — both may be plugged in.
+        let candidates = HIDLocator.findHIDPPCandidates().sorted {
+            Self.receiverPreference($0.productID) > Self.receiverPreference($1.productID)
+        }
         guard !candidates.isEmpty else { throw HIDPPError.noDevice }
 
         for candidate in candidates {
             do {
+                AppLog.log(
+                    "Trying HID++ \(candidate.productName) " +
+                    "pid=0x\(String(format: "%04X", candidate.productID))"
+                )
                 try openDevice(candidate.device)
-                try discoverDeviceIndex()
-                mtFeatureIndex = try discoverFeature(HIDPPConstants.featTouchPadRawXY)
+                // Keyboard + touchpad share one Unifying receiver (different device indices).
+                // Must scan every slot for 0x6100 — first HID++ responder is often MX Keys.
+                mtFeatureIndex = try discoverTouchPadRawXY()
                 rawInfo = try getRawInfo()
                 try setRawReportState(enabled: true, enhanced: true)
                 try verifyRawEnabled()
@@ -139,6 +147,15 @@ final class HIDPPSession {
             }
         }
         throw HIDPPError.noDevice
+    }
+
+    /// Higher = try first. T650 only pairs to classic Unifying, not Logi Bolt.
+    private static func receiverPreference(_ productID: Int) -> Int {
+        switch productID {
+        case 0xC52B, 0xC52F, 0xC532: return 100 // Unifying / Unifying nano
+        case 0xC548, 0xC54D: return -50         // Bolt
+        default: return 0
+        }
     }
 
     private func openDevice(_ dev: IOHIDDevice) throws {
@@ -192,59 +209,82 @@ final class HIDPPSession {
 
     // MARK: - Protocol
 
-    private func discoverDeviceIndex() throws {
-        var lastError: Error = HIDPPError.noDevice
+    /// Walk Unifying paired slots (1…6) until one exposes TouchPadRawXY `0x6100`.
+    /// Coexists with MX Keys / Master Keys on the same receiver: those answer HID++
+    /// root but return feature-absent for 0x6100 — we skip them and keep scanning.
+    private func discoverTouchPadRawXY() throws -> UInt8 {
+        var lastError: Error = HIDPPError.featureNotFound
+        let slots: [UInt8] = [1, 2, 3, 4, 5, 6]
+
         for useShort in [false, true] {
-            for idx: UInt8 in [0xFF, 1, 2, 3, 4, 5, 6] {
+            var anyLive = false
+            for idx in slots {
                 deviceIndex = idx
                 do {
                     if useShort {
-                        _ = try sendShortRequest(featureIndex: 0x00, functionId: 0, params: [0x00, 0x01, 0x00])
+                        _ = try sendShortRequest(
+                            featureIndex: 0x00, functionId: 0, params: [0x00, 0x01, 0x00]
+                        )
                     } else {
-                        _ = try sendRequest(featureIndex: 0x00, functionId: 0, params: [0x00, 0x01, 0x00])
+                        _ = try sendRequest(
+                            featureIndex: 0x00, functionId: 0, params: [0x00, 0x01, 0x00]
+                        )
                     }
-                    AppLog.log("HID++ device index: 0x\(String(format: "%02X", idx)) short=\(useShort)")
-                    return
+                    anyLive = true
                 } catch {
-                    lastError = error
+                    continue
                 }
+
+                if let feat = probeFeature(
+                    HIDPPConstants.featTouchPadRawXY, attempts: 3
+                ) {
+                    AppLog.log(
+                        "Touchpad en slot Unifying 0x\(String(format: "%02X", idx)) " +
+                        "— feature 0x6100 → \(feat) (short=\(useShort)); " +
+                        "teclado u otros dispositivos en el mismo receptor se dejan nativos"
+                    )
+                    return feat
+                }
+
+                AppLog.log(
+                    "HID++ slot 0x\(String(format: "%02X", idx)): vivo, sin 0x6100 " +
+                    "(teclado/ratón — se ignora)"
+                )
+                lastError = HIDPPError.featureNotFound
             }
+            // Same receiver uses one report framing for all paired devices.
+            if anyLive { break }
         }
         throw lastError
     }
 
-    private func discoverFeature(_ featureId: UInt16) throws -> UInt8 {
+    /// Soft probe with retries on timeout; returns nil immediately if the device
+    /// answers that the feature is absent (typical for keyboard slots).
+    private func probeFeature(_ featureId: UInt16, attempts: Int) -> UInt8? {
         let hi = UInt8((featureId >> 8) & 0xFF)
         let lo = UInt8(featureId & 0xFF)
-        var lastError: Error = HIDPPError.featureNotFound
-        for attempt in 0..<4 {
+        for attempt in 0..<attempts {
             do {
-                let resp = try sendRequest(featureIndex: 0x00, functionId: 0, params: [hi, lo, 0x00])
-                guard !resp.params.isEmpty, resp.params[0] != 0 else {
-                    throw HIDPPError.featureNotFound
-                }
-                AppLog.log("Feature 0x\(String(format: "%04X", featureId)) → index \(resp.params[0])")
+                let resp = try sendRequest(
+                    featureIndex: 0x00, functionId: 0, params: [hi, lo, 0x00]
+                )
+                guard !resp.params.isEmpty, resp.params[0] != 0 else { return nil }
                 return resp.params[0]
             } catch {
-                lastError = error
-                AppLog.log("getFeature attempt \(attempt + 1) failed: \(error)")
-                Thread.sleep(forTimeInterval: 0.4)
+                AppLog.log(
+                    "getFeature 0x\(String(format: "%04X", featureId)) " +
+                    "slot=0x\(String(format: "%02X", deviceIndex)) " +
+                    "attempt \(attempt + 1): \(error)"
+                )
+                Thread.sleep(forTimeInterval: 0.35)
             }
         }
-        throw lastError
+        return nil
     }
 
     /// Soft probe (single attempt): returns nil if feature absent.
     private func tryDiscoverFeature(_ featureId: UInt16) -> UInt8? {
-        let hi = UInt8((featureId >> 8) & 0xFF)
-        let lo = UInt8(featureId & 0xFF)
-        do {
-            let resp = try sendRequest(featureIndex: 0x00, functionId: 0, params: [hi, lo, 0x00])
-            guard !resp.params.isEmpty, resp.params[0] != 0 else { return nil }
-            return resp.params[0]
-        } catch {
-            return nil
-        }
+        probeFeature(featureId, attempts: 1)
     }
 
     private func getRawInfo() throws -> TouchPadRawInfo {

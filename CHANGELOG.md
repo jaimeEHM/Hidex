@@ -12,6 +12,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Additional HID++ touchpad WPIDs beyond the documented T650 profile
 - Notarized Developer ID builds (optional maintainer path)
 
+## [2.0.3] — 2026-10-26
+
+### Changed
+
+- Menu bar shows the touchpad icon only; battery % stays in the dropdown menu (not beside the icon)
+
+### Fixed
+
+- Soft tap / two-finger tap clicks: inject with HID-system `CGEventSource`, Quartz cursor position, and a short down→up gap (nil-source clicks were classified but ignored by WindowServer)
+- Tap detection: measure displacement from start centroid; finish once per contact; relax default window to 400 ms / 64 units
+- Unifying multi-device: scan all paired slots (1…6) for TouchPadRawXY `0x6100` so a Master Keys / MX Keys on the same receiver no longer blocks the T650
+- Prefer classic Unifying (`0xC52B`) over Logi Bolt when both receivers are present
+- Accessibility help on recent macOS: open Settings + clear manual steps when the system TCC popup never appears
+
+## [2.0.2] — 2026-10-26
+
+### Note
+
+Superseded by 2.0.3 (same-day fixes bundled for release).
+
+## [2.0.1] — 2026-10-26
+
+### Note
+
+Superseded by 2.0.3 (same-day fixes bundled for release).
+
 ## [2.0.0] — 2026-10-24
 
 ### Added
@@ -50,6 +76,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Published briefly under a previous account/name; superseded by Hidex 2.0.0
 
-[Unreleased]: https://github.com/jimmks7/Hidex/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/jimmks7/Hidex/compare/v2.0.3...HEAD
+[2.0.3]: https://github.com/jimmks7/Hidex/releases/tag/v2.0.3
+[2.0.2]: https://github.com/jimmks7/Hidex/compare/v2.0.1...v2.0.2
+[2.0.1]: https://github.com/jimmks7/Hidex/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/jimmks7/Hidex/releases/tag/v2.0.0
 [1.1.0]: https://github.com/jimmks7/Hidex/releases/tag/v1.1.0

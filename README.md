@@ -11,7 +11,7 @@ Gestos multitouch en **espacio de usuario** para touchpads inalámbricos **HID++
 **No afiliado a Logitech ni a Apple.** Marca propia: [Docs/BRAND.md](Docs/BRAND.md).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-2.0.3-blue.svg)](CHANGELOG.md)
 [![macOS 13+](https://img.shields.io/badge/macOS-13%2B-lightgrey.svg)](#requisitos)
 [![Universal](https://img.shields.io/badge/binary-arm64%20%7C%20x86__64-success.svg)](#compilar)
 
@@ -42,7 +42,7 @@ Extras: icono de menú tipo **touchpad** con **% de batería**, preferencias, Ge
 
 ### Icono de la barra de menú
 
-No es un icono genérico de “batería del Mac”. Hidex dibuja una **silueta de touchpad** (con contactos multitouch y una barra de carga) y muestra el **porcentaje** junto al icono (`78%`). El menú repite el detalle de batería y la **versión** (`Hidex 2.0.0 (4)`).
+No es un icono genérico de “batería del Mac”. Hidex dibuja una **silueta de touchpad** (con contactos multitouch y una barra de carga). El **porcentaje** y la **versión** (`Hidex 2.0.3 (7)`) están en el menú al hacer clic.
 
 ### Requisitos
 
@@ -153,7 +153,7 @@ Extras: **touchpad-style** menu icon with live **battery %**, preferences, Gestu
 
 ### Menu bar icon
 
-Not a generic Mac “battery” glyph. Hidex draws a **touchpad silhouette** (multitouch contacts + charge bar) and shows the **percentage** beside it. The menu also lists battery detail and **version** (`Hidex 2.0.0 (4)`).
+Not a generic Mac “battery” glyph. Hidex draws a **touchpad silhouette** (multitouch contacts + charge bar). Battery **percentage** and **version** (`Hidex 2.0.3 (7)`) live in the menu.
 
 ### Requirements
 

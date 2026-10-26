@@ -48,8 +48,9 @@ struct GestureConfig: Equatable {
     var tapToClick: Bool = true
     /// 2-finger tap → right click.
     var twoFingerTap: Bool = true
-    var tapMaxDuration: TimeInterval = 0.28
-    var tapMaxMove: CGFloat = 48
+    /// Soft taps on Unifying pads often land ~200–380 ms; 0.28 was too tight.
+    var tapMaxDuration: TimeInterval = 0.40
+    var tapMaxMove: CGFloat = 64
 
     var swipeThreshold: CGFloat = 90
     var pinchThreshold: CGFloat = 80
@@ -73,6 +74,16 @@ struct GestureConfig: Equatable {
             c.threeFingerDown = .dismiss
             UserDefaults.standard.set(true, forKey: "migratedDismissDown")
             c.save()
+        }
+        // One-shot: relax factory tap window if the user never customized it.
+        if !UserDefaults.standard.bool(forKey: "migratedTapWindow401"),
+           abs(c.tapMaxDuration - 0.28) < 0.001,
+           abs(c.tapMaxMove - 48) < 0.5 {
+            c.tapMaxDuration = 0.40
+            c.tapMaxMove = 64
+            UserDefaults.standard.set(true, forKey: "migratedTapWindow401")
+            c.save()
+            AppLog.log("Migrated tap window → 400ms / move 64")
         }
         return c
     }
